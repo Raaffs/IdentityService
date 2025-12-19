@@ -7,6 +7,7 @@ import (
 	"github.com/Raaffs/profileManager/server/internal/cipher"
 	"github.com/Raaffs/profileManager/server/internal/env"
 	"github.com/Raaffs/profileManager/server/internal/models"
+	"github.com/Raaffs/profileManager/server/internal/utils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -66,8 +67,19 @@ func (app *Application) CreateProfile(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 	}
 
+	validate:=new(utils.Validator)
+	validate.Aadhar(p.AadhaarNumber)
+	validate.Date(p.DateOfBirth.Format(""))
+	validate.Phone(p.PhoneNumber)
+	validate.NameLength(p.FullName,3,20)
+
+	if !validate.Valid(){
+		return c.JSON(http.StatusBadRequest,validate.Errors)
+	}
+
 	p.UserID = userID
 	p.AadhaarNumber,err=cipher.Encrypt(p.AadhaarNumber,app.env[env.AES_KEY])
+
 	if err!=nil{
 		app.logger.Errorf("error encrypting aadhaar number \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
@@ -123,7 +135,7 @@ func (app *Application) UpdateProfile(c echo.Context) error {
 		app.logger.Errorf("error encrypting aadhaar number \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
-	
+
 	if err := app.repo.Profiles.UpdateProfile(c.Request().Context(), p); err != nil {
 		if errors.Is(err, models.NotFound) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "profile not found"})

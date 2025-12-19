@@ -14,7 +14,6 @@ import (
 	"github.com/Raaffs/profileManager/server/internal/repository"
 	"github.com/Raaffs/profileManager/server/internal/store/postgres"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -31,6 +30,7 @@ func loadEnv() map[string]string {
 		env.DB_URL:      os.Getenv(env.DB_URL),
 		env.CLIENT_PORT: os.Getenv(env.CLIENT_PORT),
 		env.JWT_SECRET:  os.Getenv(env.JWT_SECRET),
+		env.AES_KEY:	os.Getenv(env.AES_KEY),
 	}
 	return envMap
 }
@@ -83,30 +83,3 @@ func main() {
 	log.Println("Server exited")
 }
 
-func logger() echo.MiddlewareFunc {
-	return  middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogStatus:  true,
-		LogURI:     true,
-		LogMethod:  true,
-		LogLatency: true,
-		LogError:   true,
-
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			// Line 1: Basic Request Info
-			fmt.Printf("[REQUEST] %s | %s | %s\n",
-				v.StartTime.Format("15:04:05"), v.Method, v.URI)
-
-			// Line 2: Performance & Stats
-			fmt.Printf("[RESULTS] Status: %d | Latency: %s | IP: %s\n",
-				v.Status, v.Latency.String(), v.RemoteIP)
-
-			// Line 3: Errors (only if they exist)
-			if v.Error != nil {
-				fmt.Printf("[ERROR]   %v\n", v.Error)
-			}
-
-			fmt.Println("---")
-			return nil
-		},
-	})
-}

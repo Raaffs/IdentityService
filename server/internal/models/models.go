@@ -25,7 +25,7 @@ type Profile struct {
     FullName     string    `json:"full_name"`
     DateOfBirth  time.Time `json:"date_of_birth"`
     AadhaarNumber string   `json:"aadhaar_number"`
-    UniqueID     string    `json:"unique_id"`
+    PhoneNumber     string    `json:"phone_number"`
     Address      string    `json:"address,omitempty"` // omitempty if null
     CreatedAt    time.Time `json:"created_at"`
     UpdatedAt    time.Time `json:"updated_at"`

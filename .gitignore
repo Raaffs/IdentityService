@@ -75,7 +75,7 @@ sketch
 .ionide
 
 ###environment files###
-.env/*
+.env
 .env.dev
 .env.production
 
