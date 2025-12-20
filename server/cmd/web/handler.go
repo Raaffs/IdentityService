@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/Raaffs/profileManager/server/internal/cipher"
@@ -31,7 +30,6 @@ func (app *Application) Login(c echo.Context) error {
 		app.logger.Errorf("error fetching user by email \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
-	fmt.Println(input.Password)
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
@@ -62,7 +60,7 @@ func (app *Application) Register(c echo.Context) error {
 	}
 
 
-	validate := new(utils.Validator)
+	validate := utils.NewValidator()
 	validate.NameLength(u.Username, 3, 20)
 	validate.Mail(u.Email)
 
@@ -118,7 +116,6 @@ func (app *Application) CreateProfile(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
 	}
 	p.UniqueID=uniqueID
-	fmt.Println(uniqueID,"ufdf",p.UniqueID)
 
 	p.AadhaarNumber, err = cipher.Encrypt(app.env[env.AES_KEY],p.AadhaarNumber);if err!=nil{
 		app.logger.Errorf("error encrypting aadhaar number \n%w", err)	
