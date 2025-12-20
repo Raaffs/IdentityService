@@ -14,14 +14,30 @@ func (r *PostgresProfileRepo) GetProfileByUserID(ctx context.Context, userID int
 	return &models.Profile{}, nil
 }
 
-func (r *PostgresProfileRepo) CreateProfile(ctx context.Context, profile models.Profile) error {
+func (r *PostgresProfileRepo) Create(ctx context.Context, profile models.Profile) error {
+	query:=`
+		INSERT INTO profiles (user_id,full_name,date_of_birth,phone_number,address,aadhaar_number)
+		VALUES ($1,$2,$3,$4,$5,$6)
+	`
+	_,err:=r.Pool.Exec(
+		ctx,
+		query,
+		profile.UserID,
+		profile.FullName,
+		profile.DateOfBirth,
+		profile.PhoneNumber,
+		profile.Address,
+		profile.AadhaarNumber,
+	);if err!=nil{
+		return err
+	}
 	return nil
 }
 
-func (r *PostgresProfileRepo) UpdateProfile(ctx context.Context, profile models.Profile) error {
+func (r *PostgresProfileRepo) Update(ctx context.Context, profile models.Profile) error {
 	return nil
 }
 
-func (r *PostgresProfileRepo) DeleteProfile(ctx context.Context, userID int) error {
+func (r *PostgresProfileRepo) Delete(ctx context.Context, userID int) error {
 	return nil
 }

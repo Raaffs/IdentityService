@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type ValidationError struct {
@@ -53,13 +54,19 @@ func (v *Validator) Phone(phone string)  {
 	)
 }
 
-func (v *Validator)Date(date string)  {
-	re := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`);
-	v.Check(
-	 	re.MatchString(date),
-		ErrInvalidDate.Key,
-		ErrInvalidDate.Message,
-	)
+func (v *Validator) Date(date string) {
+    // 1. Check format with your regex
+    re := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+    formatMatch := re.MatchString(date)
+    
+    if !formatMatch {
+        v.Check(false, ErrInvalidDate.Key, ErrInvalidDate.Message)
+        return
+    }
+
+    // 2. Check if it's a real calendar date (e.g., handles Feb 29 on non-leap years)
+    _, err := time.Parse("2006-01-02", date)
+    v.Check(err == nil, ErrInvalidDate.Key, "Date must be a real calendar date")
 }
 
 func (v *Validator) Mail(email string) bool {

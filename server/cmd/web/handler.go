@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/Raaffs/profileManager/server/internal/cipher"
@@ -23,7 +22,6 @@ func (app *Application) Login(c echo.Context) error {
 		app.logger.Errorf("error binding json to type user \n%w", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
-	log.Println(input.Password)
 
 	user, err := app.repo.Users.GetUserByEmail(c.Request().Context(), input.Email)
 	if err != nil {
@@ -33,8 +31,7 @@ func (app *Application) Login(c echo.Context) error {
 		app.logger.Errorf("error fetching user by email \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
-	log.Println(user)
-	fmt.Printf("[%s]\n", user.PasswordHash)
+	fmt.Println(input.Password)
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
@@ -54,11 +51,16 @@ func (app *Application) Login(c echo.Context) error {
 }
 
 func (app *Application) Register(c echo.Context) error {
-	var u models.User
+	var u struct{
+		Email string `json:"email"`
+		Password string `json:"password"`
+		Username string `json:"username"`
+	}
 	if err := c.Bind(&u); err != nil {
 		app.logger.Errorf("error binding json to type user \n%w", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
+
 
 	validate := new(utils.Validator)
 	validate.NameLength(u.Username, 3, 20)
@@ -68,13 +70,19 @@ func (app *Application) Register(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, validate.Errors)
 	}
 
-	hashedPassword, err := utils.HashPassword(u.PasswordHash)
+	hashedPassword, err := utils.HashPassword(u.Password)
 	if err != nil {
 		app.logger.Errorf("error hashing password \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
-	u.PasswordHash = hashedPassword
-	if err := app.repo.Users.CreateUser(c.Request().Context(), &u); err != nil {
+
+	var user models.User
+
+	user.Email=u.Email
+	user.Username=u.Username
+	user.PasswordHash=hashedPassword
+
+	if err := app.repo.Users.CreateUser(c.Request().Context(), &user); err != nil {
 		app.logger.Errorf("error creating user \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
@@ -96,23 +104,21 @@ func (app *Application) CreateProfile(c echo.Context) error {
 
 	validate := new(utils.Validator)
 	validate.Aadhar(p.AadhaarNumber)
-	validate.Date(p.DateOfBirth.Format(""))
+	validate.Date(p.DateOfBirth.Format("2006-01-02"))
 	validate.Phone(p.PhoneNumber)
 	validate.NameLength(p.FullName, 3, 20)
-
+	validate.NameLength(p.Address, 5, 200)
 	if !validate.Valid() {
 		return c.JSON(http.StatusBadRequest, validate.Errors)
 	}
 
 	p.UserID = userID
-	p.AadhaarNumber, err = cipher.Encrypt(p.AadhaarNumber, app.env[env.AES_KEY])
-
-	if err != nil {
-		app.logger.Errorf("error encrypting aadhaar number \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+	p.AadhaarNumber, err = cipher.Encrypt(p.AadhaarNumber, app.env[env.AES_KEY]);if err!=nil{
+		app.logger.Errorf("error encrypting aadhaar number \n%w", err)	
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
 	}
 
-	if err := app.repo.Profiles.CreateProfile(c.Request().Context(), p); err != nil {
+	if err := app.repo.Profiles.Create(c.Request().Context(), p); err != nil {
 		if errors.Is(err, models.NotFound) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "user not found"})
 		}
@@ -128,6 +134,7 @@ func (app *Application) GetProfile(c echo.Context) error {
 		app.logger.Errorf("error getting user from jwt \n%w", err)
 		return c.JSON(http.StatusUnauthorized, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
+
 
 	profile, err := app.repo.Profiles.GetProfileByUserID(c.Request().Context(), userID)
 	if err != nil {
@@ -166,7 +173,7 @@ func (app *Application) UpdateProfile(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
 
-	if err := app.repo.Profiles.UpdateProfile(c.Request().Context(), p); err != nil {
+	if err := app.repo.Profiles.Update(c.Request().Context(), p); err != nil {
 		if errors.Is(err, models.NotFound) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "profile not found"})
 		}

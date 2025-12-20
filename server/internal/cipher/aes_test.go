@@ -22,6 +22,7 @@ func TestEncryptDecrypt_SameKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GenerateAES256KeyBase64() error = %v", err)
 	}
+
 	fmt.Println(key)
 	tests := []struct {
 		plaintext string
@@ -55,6 +56,7 @@ func TestDecrypt_DifferentKey_Error(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GenerateAES256KeyBase64() error = %v", err)
 	}
+	fmt.Println(key)
 	otherKey,err:=GenerateAES256KeyBase64()
 	if err != nil {
 		t.Fatalf("GenerateAES256KeyBase64() error = %v", err)

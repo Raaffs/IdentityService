@@ -20,7 +20,7 @@ type UserRepository interface {
 
 type ProfileRepository interface {
 	GetProfileByUserID(ctx context.Context, userID int) (*models.Profile, error)
-	CreateProfile(ctx context.Context, profile models.Profile) error
-	UpdateProfile(ctx context.Context, profile models.Profile) error
-	DeleteProfile(ctx context.Context, userID int) error
+	Create(ctx context.Context, profile models.Profile) error
+	Update(ctx context.Context, profile models.Profile) error
+	Delete(ctx context.Context, userID int) error
 }
