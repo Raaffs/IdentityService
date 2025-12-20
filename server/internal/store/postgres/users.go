@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Raaffs/profileManager/server/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -13,63 +15,65 @@ type PostgresUserRepo struct {
 
 func (r *PostgresUserRepo) GetUserByID(ctx context.Context, id int) (*models.User, error) {
 	var u models.User
-	query:=`
+	query := `
 		SELECT id,email,username
 		FROM users
 	`
-	if err:=r.Pool.QueryRow(ctx,query,id).Scan(
+	if err := r.Pool.QueryRow(ctx, query, id).Scan(
 		&u.ID,
 		&u.Email,
 		&u.Username,
-	); err!=nil{
-		return nil,err
+	); err != nil {
+		return nil, err
 	}
-	return &u,nil
+	return &u, nil
 }
 
 func (r *PostgresUserRepo) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	var u models.User
-	query:=`
-		SELECT id,email,username
+	query := `
+		SELECT id,email,username,password_hash
 		FROM users
 		WHERE email=$1
 	`
-	if err:=r.Pool.QueryRow(ctx,query,email).Scan(
+	if err := r.Pool.QueryRow(ctx, query, email).Scan(
 		&u.ID,
 		&u.Email,
 		&u.Username,
-	); err!=nil{
-		return nil,err
+		&u.PasswordHash,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, models.NotFound
+		}
+		return nil, err
 	}
-	return &u,nil
+	return &u, nil
 }
 
 func (r *PostgresUserRepo) CreateUser(ctx context.Context, user *models.User) error {
-	query:=`
+	query := `
 		INSERT INTO users (email,username,password_hash)
 		VALUES ($1,$2,$3)
 	`
-	_,err:=r.Pool.Exec(
+	_, err := r.Pool.Exec(
 		ctx,
 		query,
 		user.Email,
 		user.Username,
 		user.PasswordHash,
 	)
-	
-	if err!=nil{
+
+	if err != nil {
 		return err
 	}
 
-	return nil 
+	return nil
 }
 
 func (r *PostgresUserRepo) UpdateUser(ctx context.Context, user *models.User) error {
-	return nil 
+	return nil
 }
 
 func (r *PostgresUserRepo) DeleteUser(ctx context.Context, id int) error {
-	return nil 
+	return nil
 }
-
-

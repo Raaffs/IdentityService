@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/Raaffs/profileManager/server/internal/cipher"
@@ -9,6 +11,7 @@ import (
 	"github.com/Raaffs/profileManager/server/internal/models"
 	"github.com/Raaffs/profileManager/server/internal/utils"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (app *Application) Login(c echo.Context) error {
@@ -20,18 +23,30 @@ func (app *Application) Login(c echo.Context) error {
 		app.logger.Errorf("error binding json to type user \n%w", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
-	user, err := app.repo.Users.GetUserByEmail(c.Request().Context(), c.FormValue("email"))
+	log.Println(input.Password)
+
+	user, err := app.repo.Users.GetUserByEmail(c.Request().Context(), input.Email)
 	if err != nil {
 		if errors.Is(err, models.NotFound) {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "user not found"})
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
 		}
 		app.logger.Errorf("error fetching user by email \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
+	log.Println(user)
+	fmt.Printf("[%s]\n", user.PasswordHash)
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
+		}
+		app.logger.Error("error comparing password hash \n%w", err)
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+	}
+
 	token, err := app.GenerateToken(user.ID)
 	if err != nil {
 		app.logger.Errorf("error generating token \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
 	return c.JSON(http.StatusOK, echo.Map{
 		"token": token,
@@ -45,13 +60,25 @@ func (app *Application) Register(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	err := app.repo.Users.CreateUser(c.Request().Context(), &u)
-	if err != nil {
-		app.logger.Errorf("error creating user \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	validate := new(utils.Validator)
+	validate.NameLength(u.Username, 3, 20)
+	validate.Mail(u.Email)
+
+	if !validate.Valid() {
+		return c.JSON(http.StatusBadRequest, validate.Errors)
 	}
 
-	return nil
+	hashedPassword, err := utils.HashPassword(u.PasswordHash)
+	if err != nil {
+		app.logger.Errorf("error hashing password \n%w", err)
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+	}
+	u.PasswordHash = hashedPassword
+	if err := app.repo.Users.CreateUser(c.Request().Context(), &u); err != nil {
+		app.logger.Errorf("error creating user \n%w", err)
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"message": "account created successfully"})
 }
 
 func (app *Application) CreateProfile(c echo.Context) error {
@@ -67,22 +94,22 @@ func (app *Application) CreateProfile(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 	}
 
-	validate:=new(utils.Validator)
+	validate := new(utils.Validator)
 	validate.Aadhar(p.AadhaarNumber)
 	validate.Date(p.DateOfBirth.Format(""))
 	validate.Phone(p.PhoneNumber)
-	validate.NameLength(p.FullName,3,20)
+	validate.NameLength(p.FullName, 3, 20)
 
-	if !validate.Valid(){
-		return c.JSON(http.StatusBadRequest,validate.Errors)
+	if !validate.Valid() {
+		return c.JSON(http.StatusBadRequest, validate.Errors)
 	}
 
 	p.UserID = userID
-	p.AadhaarNumber,err=cipher.Encrypt(p.AadhaarNumber,app.env[env.AES_KEY])
+	p.AadhaarNumber, err = cipher.Encrypt(p.AadhaarNumber, app.env[env.AES_KEY])
 
-	if err!=nil{
+	if err != nil {
 		app.logger.Errorf("error encrypting aadhaar number \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
 
 	if err := app.repo.Profiles.CreateProfile(c.Request().Context(), p); err != nil {
@@ -90,7 +117,7 @@ func (app *Application) CreateProfile(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "user not found"})
 		}
 		app.logger.Errorf("error creating profile \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
 	return nil
 }
@@ -99,7 +126,7 @@ func (app *Application) GetProfile(c echo.Context) error {
 	userID, err := app.GetUserJWT(c)
 	if err != nil {
 		app.logger.Errorf("error getting user from jwt \n%w", err)
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return c.JSON(http.StatusUnauthorized, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
 
 	profile, err := app.repo.Profiles.GetProfileByUserID(c.Request().Context(), userID)
@@ -108,11 +135,14 @@ func (app *Application) GetProfile(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "profile not found"})
 		}
 		app.logger.Errorf("error fetching profile by user id \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
 
-	profile.AadhaarNumber,err=cipher.Decrypt(profile.AadhaarNumber,app.env[env.AES_KEY])
-
+	profile.AadhaarNumber, err = cipher.Decrypt(profile.AadhaarNumber, app.env[env.AES_KEY])
+	if err != nil {
+		app.logger.Errorf("error decrypting aadhaar number \n%w", err)
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
+	}
 	return c.JSON(http.StatusOK, profile)
 }
 
@@ -128,12 +158,12 @@ func (app *Application) UpdateProfile(c echo.Context) error {
 		app.logger.Errorf("error binding json to type profile \n%w", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
-	
+
 	p.UserID = userID
-	p.AadhaarNumber,err=cipher.Encrypt(p.AadhaarNumber,app.env[env.AES_KEY])
-	if err!=nil{
+	p.AadhaarNumber, err = cipher.Encrypt(p.AadhaarNumber, app.env[env.AES_KEY])
+	if err != nil {
 		app.logger.Errorf("error encrypting aadhaar number \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
 
 	if err := app.repo.Profiles.UpdateProfile(c.Request().Context(), p); err != nil {
@@ -141,7 +171,7 @@ func (app *Application) UpdateProfile(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "profile not found"})
 		}
 		app.logger.Errorf("error updating profile \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
-	}	
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+	}
 	return nil
 }

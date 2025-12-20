@@ -13,6 +13,7 @@ import (
 	"github.com/Raaffs/profileManager/server/internal/env"
 	"github.com/Raaffs/profileManager/server/internal/repository"
 	"github.com/Raaffs/profileManager/server/internal/store/postgres"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -25,6 +26,11 @@ type Application struct {
 }
 
 func loadEnv() map[string]string {
+	// It reads the .env file and injects it into the OS environment
+    err := godotenv.Load() 
+    if err != nil {
+        log.Fatal("Error loading .env file")
+    }
 	envMap := map[string]string{
 		env.API_PORT:    os.Getenv(env.API_PORT),
 		env.DB_URL:      os.Getenv(env.DB_URL),
@@ -60,6 +66,7 @@ func main() {
 		repo:   store.NewPostgresRepo(conn),
 		logger: srv.Logger,
 	}
+	log.Println("app env",app.env)
 
 	app.RegisterRoutes(srv)
 	app.LoadMiddleware(srv)

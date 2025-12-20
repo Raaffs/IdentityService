@@ -2,9 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/Raaffs/profileManager/server/internal/env"
+	"github.com/golang-jwt/jwt/v5"
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/time/rate"
@@ -37,6 +41,7 @@ func (app *Application) LoadMiddleware(e *echo.Echo) {
 			return nil
 		},
 	}))
+
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     []string{"http://localhost:3000"},
@@ -59,15 +64,31 @@ func (app *Application) LoadMiddleware(e *echo.Echo) {
 		DenyHandler: func(context echo.Context, identifier string, err error) error {
 			return context.JSON(http.StatusTooManyRequests, nil)
 		},
-	}
+	}	
 	e.Use(middleware.RateLimiterWithConfig(config))
 }
 
 func (app *Application) RegisterRoutes(e *echo.Echo) {
-	e.POST("/api/login", app.Login)
-	e.POST("/api/register", app.Register)
+    // Public routes
+    e.POST("/api/login", app.Login)
+    e.POST("/api/register", app.Register)
 
-	e.POST("/api/profile", app.CreateProfile)
-	e.GET("/api/profile", app.GetProfile)
-	e.PUT("/api/profile", app.UpdateProfile)
+    // Protected routes - Everything under /api/restricted/...
+    r := e.Group("/api/restricted") 
+	log.Println("signing key: ",app.env[env.JWT_SECRET])
+    r.Use(echojwt.WithConfig(echojwt.Config{
+        SigningKey: []byte(app.env[env.JWT_SECRET]),
+		TokenLookup: "header:Authorization:Bearer ", 
+        NewClaimsFunc: func(c echo.Context) jwt.Claims {
+            return new(JwtCustomClaims)
+        },
+		ErrorHandler: func(c echo.Context, err error) error {
+        fmt.Printf("DEBUG: JWT Error: %v\n", err) // This will tell us if it's signature, expiry, or format
+        return err
+    },
+    }))
+
+    r.GET("/profile", app.GetProfile)    
+    r.POST("/profile", app.CreateProfile) 
+    r.PUT("/profile", app.UpdateProfile)  
 }
