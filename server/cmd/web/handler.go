@@ -107,7 +107,6 @@ func (app *Application) CreateProfile(c echo.Context) error {
 	validate.Date(p.DateOfBirth.Format("2006-01-02"))
 	validate.Phone(p.PhoneNumber)
 	validate.NameLength(p.FullName, 3, 20)
-	validate.NameLength(p.Address, 5, 200)
 	if !validate.Valid() {
 		return c.JSON(http.StatusBadRequest, validate.Errors)
 	}

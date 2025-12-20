@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Raaffs/profileManager/server/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 type PostgresProfileRepo struct {
@@ -11,7 +13,38 @@ type PostgresProfileRepo struct {
 }
 
 func (r *PostgresProfileRepo) GetProfileByUserID(ctx context.Context, userID int) (*models.Profile, error) {
-	return &models.Profile{}, nil
+	var p models.Profile
+	query:=`
+		SELECT 
+		user_id,
+		full_name,
+		date_of_birth,
+		phone_number,
+		address,
+		aadhaar_number,
+		unique_id
+		FROM profiles
+		WHERE user_id=$1
+	`
+     if err:=r.Pool.QueryRow(
+		ctx,
+		query,
+		userID,
+	).Scan(
+		&p.UserID,
+		&p.FullName,
+		&p.DateOfBirth,
+		&p.PhoneNumber,
+		&p.Address,
+		&p.AadhaarNumber,
+		&p.UniqueID,	
+	);err!=nil{
+		if errors.Is(err, pgx.ErrNoRows){
+			return nil, models.NotFound
+		}
+		return nil, err
+	}
+	return &p, nil
 }
 
 func (r *PostgresProfileRepo) Create(ctx context.Context, profile models.Profile) error {
