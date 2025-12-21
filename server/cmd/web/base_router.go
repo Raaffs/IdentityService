@@ -43,7 +43,10 @@ func (app *Application) LoadMiddleware(e *echo.Echo) {
 
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowOrigins:     []string{
+			"http://localhost:5173", // local dev
+			"http://localhost:3000",// docker service
+		},
 		AllowCredentials: true,
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},

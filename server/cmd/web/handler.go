@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/Raaffs/profileManager/server/internal/cipher"
@@ -14,7 +14,6 @@ import (
 )
 
 func (app *Application) Login(c echo.Context) error {
-	fmt.Println("yoooo")
 	var input struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -30,14 +29,14 @@ func (app *Application) Login(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
 		}
 		app.logger.Errorf("error fetching user by email \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
 		}
 		app.logger.Error("error comparing password hash \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
 	}
 
 	token, err := app.GenerateToken(user.ID)
@@ -51,6 +50,7 @@ func (app *Application) Login(c echo.Context) error {
 }
 
 func (app *Application) Register(c echo.Context) error {
+	log.Println("hit register")
 	var u struct{
 		Email string `json:"email"`
 		Password string `json:"password"`

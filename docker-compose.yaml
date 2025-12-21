@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api.dockerfile
+    container_name: api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.development
+    environment:
+      - DOCKER=true   # signal to Go code that it’s running in Docker
+    restart: unless-stopped
+
+  client:
+    build:
+      args:
+        - VITE_API_BASE_URL=http://api:8080/api
+      context: .
+      dockerfile: client.dockerfile
+    container_name: client
+    ports:
+      - "3000:3000"   # host:container mapping
+    depends_on:
+      - api
+    environment:
+      # Frontend uses this to know where API is in Docker
+      - VITE_API_BASE_URL=http://api:8080/api
+    restart: unless-stopped
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: maria
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: profile_manager
+    ports:
+      - "5435:5432"
+    volumes:
+      # Mounts your local schema file to the auto-run directory
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U maria -d profile_manager"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

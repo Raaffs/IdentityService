@@ -25,39 +25,65 @@ type Application struct {
 	logger echo.Logger
 }
 
-func loadEnv() map[string]string {
-	// It reads the .env file and injects it into the OS environment
-    err := godotenv.Load(".env.development") 
-    if err != nil {
-        log.Fatal("Error loading .env file")
-    }
-	envMap := map[string]string{
-		env.API_PORT:    os.Getenv(env.API_PORT),
-		env.DB_URL:      os.Getenv(env.DB_URL),
-		env.CLIENT_PORT: os.Getenv(env.CLIENT_PORT),
-		env.JWT_SECRET:  os.Getenv(env.JWT_SECRET),
-		env.AES_KEY:	os.Getenv(env.AES_KEY),
+func connectWithRetry(ctx context.Context, dbURL string) (*pgxpool.Pool, error) {
+	var pool *pgxpool.Pool
+	var err error
+
+	for i := range 10 {
+		log.Printf("Attempting DB connection (attempt %d/10)...", i+1)
+		
+		pool, err = pgxpool.New(ctx, dbURL)
+		if err == nil {
+			err = pool.Ping(ctx)
+			if err == nil {
+				log.Println("PING SUCCESSFUL")
+				return pool, nil
+			}
+		}
+
+		log.Printf("DB not ready: %v. Retrying in 2s...", err)
+		if pool != nil {
+			pool.Close()
+		}
+		time.Sleep(2 * time.Second)
 	}
-	return envMap
+
+	return nil, fmt.Errorf("failed to connect to DB: %w", err)
 }
+func loadEnv() map[string]string {
+    if os.Getenv("DOCKER") != "true" {
+        if err := godotenv.Load(".env"); err != nil {
+            log.Println("No local .env found, skipping")
+        }
+    }
+
+    envMap := map[string]string{
+        env.API_PORT:    os.Getenv(env.API_PORT),
+        env.DB_URL:      os.Getenv(env.DB_URL),
+        env.CLIENT_PORT: os.Getenv(env.CLIENT_PORT),
+        env.JWT_SECRET:  os.Getenv(env.JWT_SECRET),
+        env.AES_KEY:     os.Getenv(env.AES_KEY),
+    }
+    return envMap
+}
+
+
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	log.Println("Attempting DB connection...")
-	conn, err := pgxpool.New(ctx, "postgres://maria:root@localhost:5432/profile_manager")
-	if err != nil {
-		fmt.Printf("DB ERROR: %v\n", err)
-		return
+	conn, err := connectWithRetry(ctx,loadEnv()[env.DB_URL]);if err!=nil{
+		log.Fatalf("Could not connect to DB: %v", err)
 	}
 
 	log.Println("DB connection object created. Testing ping...")
 	if err := conn.Ping(ctx); err != nil {
 		fmt.Printf("PING ERROR: %v\n", err)
+	}else{
+		log.Println("DB connection successful!")
 	}
-	log.Println("PING SUCCESSFUL")
-
 
 	srv := echo.New()
 

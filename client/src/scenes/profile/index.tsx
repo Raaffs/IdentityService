@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Stack,
@@ -7,12 +7,11 @@ import {
   Typography,
   Button,
   Avatar,
-  IconButton,
   CircularProgress,
   Alert,
   Paper,
-  Grid,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import EditIcon from "@mui/icons-material/Edit";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useFormik } from "formik";
@@ -165,7 +164,7 @@ function Profile() {
         {/* Form Body - Grid Spread */}
         <Box component="form" onSubmit={formik.handleSubmit}>
           <Grid container spacing={6}>
-            <Grid item xs={12} md={6}>
+            <Grid  size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Full Name"
@@ -178,7 +177,7 @@ function Profile() {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid  size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Date of Birth"
@@ -193,7 +192,7 @@ function Profile() {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid  size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Aadhaar Number"
@@ -206,7 +205,7 @@ function Profile() {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid  size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Phone Number"
@@ -219,7 +218,7 @@ function Profile() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid  size={{xs:12}}>
               <TextField
                 fullWidth
                 label="Residential Address"

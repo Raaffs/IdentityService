@@ -6,7 +6,7 @@ import AppRouter from './routes/router'
 
 const theme = createTheme();
 function App() {
-  console.log("api: ",import.meta.env.VITE_API_URL);
+  console.log("API BASE:: ",import.meta.env.VITE_API_BASE_URL);
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

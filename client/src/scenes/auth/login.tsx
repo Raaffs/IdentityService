@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Stack,
   Box,
@@ -33,7 +33,7 @@ function Login() {
     },
     validationSchema: loginSchema,
     onSubmit: async (values) => {
-      setServerError(null); // Reset error state
+      setServerError(null); 
       try {
         const response = await api.post("/login", values);
         
@@ -113,7 +113,7 @@ function Login() {
 
             <TextField
               label="Email"
-              variant="standard"
+            variant="standard"
               fullWidth
               autoComplete="email"
               {...formik.getFieldProps("email")}
@@ -165,7 +165,6 @@ function Login() {
           </Box>
         </Box>
 
-        {/* RIGHT SIDE: AESTHETIC WELCOME */}
         <Box
           sx={{
             flex: 1,
