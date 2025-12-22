@@ -1,26 +1,6 @@
 <a name="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
 
 
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-
-
-
-<!-- PROJECT LOGO -->
 <br />
 
 <div align="center">
@@ -47,7 +27,7 @@ The core focus of this system is the Protection of Personally Identifiable Infor
 * [![React][React.js]][React-url]
 * [![psql][psql]][psql-url]
 * [![docker][docker]][docker-url]
-
+---------
 ## Implementation approach and core logic 
 
 ### 1.  Backend Implementation
@@ -99,8 +79,57 @@ c. **Form Handling & Validation**
 d. **Theme & Styling**  
 - The app uses Material-UI (`@mui`) with a custom theme applied via `ThemeProvider`.  
 - Input fields are styled with `textFieldSx` and `activeTextFieldSx` for focused, hover, and disabled states.  
-- Buttons use `btnstyle` with gradients, rounded borders, shadows, and hover effects for a modern look.  
+- Buttons use `btnstyle` with gradients, rounded borders, shadows, and hover effects for a modern look.
 
+  ---
+## Development Setup Guide
+
+Follow these instructions to get the project up and running on your local machine.
+
+### 🛠 Prerequisites
+
+Ensure you have the following installed before proceeding:
+
+* **Go** (Golang): [Download & Install](https://go.dev/doc/install)
+* **Node.js**: [Download & Install](https://nodejs.org/)
+* **PostgreSQL**: [Download & Install](https://www.postgresql.org/download/)
+* **Docker & Docker Compose**: [Get Docker](https://docs.docker.com/get-docker/)
+---
+### Setup Instructions
+
+#### Option 1: Using Docker (Recommended)
+  ```bash
+  docker compose --env-file .env.example up --build
+  ```
+---
+#### Option 2: Manual Local Setup
+1. Environment Configuration
+     Create your local environment file and update the database connection string.
+    ```bash
+    cp .env.example .env
+    # Open .env and edit your DATABASE_URL
+    ```
+2. Database Migrations
+   ```bash
+     go install -tags 'postgres' [github.com/golang-migrate/migrate/v4/cmd/migrate@latest](https://github.com/golang-migrate/migrate/v4/cmd/migrate@latest)
+   ```
+    ```bash
+    migrate -path server/migrations/ -database "your_db_url" up
+    ```
+3. Backend Setup
+   Install Go modules and start the server.
+    ```bash
+    go mod tidy
+    ```
+    ```bash
+    go run ./server/cmd/web
+    ```
+4. Frontend Setup
+   ```bash
+    cd client
+    npm install
+    npm run dev
+    ```
 [Go]: https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white
 [Go-url]: https://go.dev/
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
