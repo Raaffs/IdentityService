@@ -11,6 +11,9 @@ services:
     environment:
       - DOCKER=true  
       - DB_URL=${DB_URL}  
+      - JWT_SECRET=${JWT_SECRET}
+      - AES_SECRET=${AES_SECRET}
+      
     restart: unless-stopped
 
   client:
