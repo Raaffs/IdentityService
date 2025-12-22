@@ -14,7 +14,7 @@ type PostgresUserRepo struct {
 	Pool *pgxpool.Pool
 }
 
-func (r *PostgresUserRepo) GetUserByID(ctx context.Context, id int) (*models.User, error) {
+func (r *PostgresUserRepo) GetByID(ctx context.Context, id int) (*models.User, error) {
 	var u models.User
 	query := `
 		SELECT id,email,username
@@ -30,7 +30,7 @@ func (r *PostgresUserRepo) GetUserByID(ctx context.Context, id int) (*models.Use
 	return &u, nil
 }
 
-func (r *PostgresUserRepo) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *PostgresUserRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	var u models.User
 	query := `
 		SELECT id,email,username,password_hash
@@ -51,7 +51,7 @@ func (r *PostgresUserRepo) GetUserByEmail(ctx context.Context, email string) (*m
 	return &u, nil
 }
 
-func (r *PostgresUserRepo) CreateUser(ctx context.Context, user *models.User) error {
+func (r *PostgresUserRepo) Create(ctx context.Context, user *models.User) error {
 	query := `
 		INSERT INTO users (email,username,password_hash)
 		VALUES ($1,$2,$3)
@@ -74,10 +74,3 @@ func (r *PostgresUserRepo) CreateUser(ctx context.Context, user *models.User) er
 	return nil
 }
 
-func (r *PostgresUserRepo) UpdateUser(ctx context.Context, user *models.User) error {
-	return nil
-}
-
-func (r *PostgresUserRepo) DeleteUser(ctx context.Context, id int) error {
-	return nil
-}

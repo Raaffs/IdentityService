@@ -13,7 +13,7 @@ type PostgresProfileRepo struct {
 	Pool *pgxpool.Pool
 }
 
-func (r *PostgresProfileRepo) GetProfileByUserID(ctx context.Context, userID int) (*models.Profile, error) {
+func (r *PostgresProfileRepo) GetByUserID(ctx context.Context, userID int) (*models.Profile, error) {
 	var p models.Profile
 	query:=`
 		SELECT 

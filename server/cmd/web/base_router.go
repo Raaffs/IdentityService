@@ -29,7 +29,7 @@ func (app *Application) LoadMiddleware(e *echo.Echo) {
 
 			// Line 2: Performance & Stats
 			fmt.Printf("[RESULTS] Status: %d | Latency: %s | IP: %s\n",
-				v.Status, v.Latency.String(), v.RemoteIP)
+				v.Status, v.Latency.String(), c.RealIP())
 
 			// Line 3: Errors (only if they exist)
 			if v.Error != nil {

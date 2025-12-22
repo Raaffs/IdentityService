@@ -11,16 +11,13 @@ type Repository struct {
 }
 
 type UserRepository interface {
-	GetUserByID(ctx context.Context, id int) (*models.User, error)
-	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
-	CreateUser(ctx context.Context, user *models.User) error
-	UpdateUser(ctx context.Context, user *models.User) error
-	DeleteUser(ctx context.Context, id int) error
+	GetByID(ctx context.Context, id int) (*models.User, error)
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
+	Create(ctx context.Context, user *models.User) error
 }
 
 type ProfileRepository interface {
-	GetProfileByUserID(ctx context.Context, userID int) (*models.Profile, error)
+	GetByUserID(ctx context.Context, userID int) (*models.Profile, error)
 	Create(ctx context.Context, profile models.Profile) error
 	Update(ctx context.Context, profile models.Profile) error
-	Delete(ctx context.Context, userID int) error
 }

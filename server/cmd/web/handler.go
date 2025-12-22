@@ -22,7 +22,7 @@ func (app *Application) Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	user, err := app.repo.Users.GetUserByEmail(c.Request().Context(), input.Email)
+	user, err := app.repo.Users.GetByEmail(c.Request().Context(), input.Email)
 	if err != nil {
 		if errors.Is(err, models.NotFound) {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
@@ -79,7 +79,7 @@ func (app *Application) Register(c echo.Context) error {
 	user.Username=u.Username
 	user.PasswordHash=hashedPassword
 
-	if err := app.repo.Users.CreateUser(c.Request().Context(), &user); err != nil {
+	if err := app.repo.Users.Create(c.Request().Context(), &user); err != nil {
 		if errors.Is(err, models.AlreadyExists) {
 			return c.JSON(http.StatusConflict, map[string]string{"error": "email or username already exists"})
 		}
@@ -138,7 +138,7 @@ func (app *Application) GetProfile(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 	}
 
-	profile, err := app.repo.Profiles.GetProfileByUserID(c.Request().Context(), userID)
+	profile, err := app.repo.Profiles.GetByUserID(c.Request().Context(), userID)
 	if err != nil {
 		if errors.Is(err, models.NotFound) {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "profile not found"})

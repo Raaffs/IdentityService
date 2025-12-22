@@ -2,11 +2,9 @@
 import axios from "axios";
 
 // Dynamically set API base URL depending on environment
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 
-                   (window.location.hostname === "localhost" ? 
-                    "http://localhost:8080/api" : "http://api:8080/api");
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api" 
 
-                    console.log("API Basefff URL:", apiBaseURL,"meta;", import.meta.env.VITE_API_BASE_URL);
+                    console.log("API BASE URL:", apiBaseURL,"meta;", import.meta.env.VITE_API_BASE_URL);
 const api = axios.create({
   baseURL: apiBaseURL,
   headers: {

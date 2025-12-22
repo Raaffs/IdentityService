@@ -48,38 +48,58 @@ The core focus of this system is the Protection of Personally Identifiable Infor
 * [![psql][psql]][psql-url]
 * [![docker][docker]][docker-url]
 
-## Implementation Approach & Core Logic
+## Implementation approach and core logic 
 
-This project follows a **microservices-friendly architecture** optimized for Docker deployment. Key components include:
+### 1.  Backend Implementation
 
-1. **Authentication & Authorization**  
-   - Users are authenticated via JWTs, generated using `GenerateToken(userID)` and validated in each request with `GetUserJWT()`.
-   - JWT claims include the `UserID` and standard JWT expiration.
-   - Tokens are generated using the HS256 signing algorithm with a 72-hour expiration.
+a. **Authentication & Authorization**  
+  - Users are authenticated via JWTs, generated using `GenerateToken(userID)` and validated in each request with `GetUserJWT()`.  
+  - JWT claims include the `UserID` and standard JWT expiration.  
+  - Tokens use the HS256 signing algorithm with a 72-hour expiration.  
+
+b. **Data Layer**  
+  - User and profile data is managed through separate repository interfaces (`UserRepository` and `ProfileRepository`) for clean separation of concerns.  
+  - CRUD operations are abstracted behind the repository layer to allow easy swapping of database backends.  
+  - Database schema is initialized via the `migrations/` folder; `init.sql` is used for Docker container setup.  
+
+c. **Data Security**  
+  - Sensitive fields are encrypted using AES-GCM via `EncryptFields` and `DecryptFields`.  
+  - Uses Go’s standard libraries: `crypto/aes` (AES block cipher), `crypto/cipher` (GCM mode), and `crypto/rand` (secure nonces).  
+  - AES-256 secret keys are stored securely via environment variables.  
+  - Passwords are hashed using `bcrypt` with a nonce to protect against brute-force and rainbow table attacks.  
+
+d. **Input Validation**  
+  - Data is validated using the `Validator` utility before saving to the database.  
+  - Checks include name length, Aadhaar number format, phone number format, and date correctness.  
+  - Errors are collected in an `Errors` map for consistent handling of invalid inputs.  
+
+e. **Error Handling**  
+  - Standard HTTP errors are defined via `HttpResponseMsg` constants (`ErrBadRequest`, `ErrUnauthorized`, etc.).  
+  - Repository methods return custom errors (`NotFound`, `AlreadyExists`) to provide a consistent interface for the service layer.  
+  - DB-specific errors (e.g., `pgx.ErrNoRows`, unique constraint violations) are mapped to these custom errors, keeping the service layer database-agnostic.  
+
+### 2. Frontend Implementation
+
+a. **API Integration**  
+  - Axios is used for HTTP requests, with the base URL dynamically set from `VITE_API_BASE_URL` and a fallback to `http://localhost:8080/api`.  
+  - JWT tokens from `localStorage` are automatically attached to requests via an Axios request interceptor (`Authorization: Bearer <token>`).  
+
+b. **Routing & Route Protection**  
+  - Routes are managed with `react-router-dom`.  
+  - The `ProtectedRoute` component ensures only authenticated users can access certain pages (e.g., Profile).  
+  - Unauthenticated users are redirected to the login page, and unknown routes fall back to a 404 error page.
     
-1. **Data Layer**  
-   - All user data and profiles are managed through separate repository interfaces (`UserRepository` and `ProfileRepository`) for clean separation of concerns.
-   - CRUD operations are abstracted behind the repository layer to allow easy swapping of database backends.
-   - Database schema is initialized via the `migrations/` folder. `init.sql` is used to initialize docker container
-     
-3. **Data Security**  
-   - Sensitive fields are encrypted using AES-GCM via `EncryptFields` and `DecryptFields` helpers.
-   - Uses Go’s standard libraries: `crypto/aes` for the AES block cipher, `crypto/cipher` for GCM mode, and `crypto/rand` for secure random nonces.
-   - AES-256 secret keys are securely managed through environment variables.
-   - Passwords are hashed using `bcrypt` with a nonce, ensuring secure storage and protection against brute-force and rainbow table attacks.
-
-4. **Input Validation**
-   - User and profile data is validated using the `Validator` utility before saving to the database.
-   - Checks include name length, Aadhaar number format, phone number format, and date correctness.
-   - Errors are collected in an `Errors` map with descriptive messages for consistent handling of invalid inputs.
-     
-5. **Error Handling & Responses**
-   - Standard HTTP errors are defined via HttpResponseMsg constants (ErrBadRequest, ErrUnauthorized, etc.) for clear messaging.
-   - Repository methods return custom errors (`NotFound`, `AlreadyExists`) to provide a consistent interface for the service layer.
-   - DB-specific errors (e.g., `pgx.ErrNoRows`, unique constraint violations) are mapped to these custom errors, keeping the service layer database-agnostic.
+c. **Form Handling & Validation**  
+- Forms are implemented using `Formik` for state management and submission handling.  
+- Input validation is done with `Yup` schemas, enforcing rules like name length, Aadhaar number format, phone number format, and valid dates.  
+- On submit, forms either create or update profiles via the API (`POST` or `PUT` requests to `restricted/profile`).  
+- Server responses are handled gracefully, showing success or error messages based on API results.
 
 
-
+d. **Theme & Styling**  
+- The app uses Material-UI (`@mui`) with a custom theme applied via `ThemeProvider`.  
+- Input fields are styled with `textFieldSx` and `activeTextFieldSx` for focused, hover, and disabled states.  
+- Buttons use `btnstyle` with gradients, rounded borders, shadows, and hover effects for a modern look.  
 
 [Go]: https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white
 [Go-url]: https://go.dev/

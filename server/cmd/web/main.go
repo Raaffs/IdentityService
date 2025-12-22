@@ -53,7 +53,7 @@ func connectWithRetry(ctx context.Context, dbURL string) (*pgxpool.Pool, error) 
 func loadEnv() map[string]string {
     if os.Getenv("DOCKER") != "true" {
         if err := godotenv.Load(".env"); err != nil {
-            log.Println("No local .env found, skipping")
+            log.Fatal("No local .env found, skipping")
         }
     }
 	log.Println("run time env: ",os.Getenv("DOCKER"))
@@ -72,29 +72,21 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log.Println("Attempting DB connection...")
 	conn, err := connectWithRetry(ctx,loadEnv()[env.DB_URL]);if err!=nil{
 		log.Fatalf("Could not connect to DB: %v", err)
 	}
 
-	log.Println("DB connection object created. Testing ping...")
-	if err := conn.Ping(ctx); err != nil {
-		fmt.Printf("PING ERROR: %v\n", err)
-	}else{
-		log.Println("DB connection successful!")
-	}
-
 	srv := echo.New()
-
 		app := &Application{
 		env:    loadEnv(),
 		repo:   store.NewPostgresRepo(conn),
 		logger: srv.Logger,
 	}
-	log.Println("app env",app.env)
 
 	app.RegisterRoutes(srv)
 	app.LoadMiddleware(srv)
+	srv.Logger=app.logger
+	
 	go func() {
 		log.Println(" Server starting on :8080")
 		if err := srv.Start(":8080"); err != nil && err != http.ErrServerClosed {
@@ -111,7 +103,6 @@ func main() {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("Proper server Shutdown Failed: %+v", err)
 	}
-	srv.Logger=app.logger
 	log.Println("Server exited")
 }
 
