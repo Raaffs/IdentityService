@@ -19,20 +19,20 @@ func (app *Application) Login(c echo.Context) error {
 	}
 	if err := c.Bind(&input); err != nil {
 		app.logger.Errorf("error binding json to type user \n%w", err)
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+		return c.JSON(http.StatusBadRequest, map[string]HttpResponseMsg{"error": ErrBadRequest})
 	}
 
 	user, err := app.repo.Users.GetByEmail(c.Request().Context(), input.Email)
 	if err != nil {
 		if errors.Is(err, models.NotFound) {
-			return c.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
+			return c.JSON(http.StatusNotFound, map[string]HttpResponseMsg{"error": ErrNotFound})
 		}
 		app.logger.Errorf("error fetching user by email \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
+			return c.JSON(http.StatusUnauthorized, map[string]HttpResponseMsg{"error": ErrUnauthorized})
 		}
 		app.logger.Error("error comparing password hash \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
@@ -41,7 +41,7 @@ func (app *Application) Login(c echo.Context) error {
 	token, err := app.GenerateToken(user.ID)
 	if err != nil {
 		app.logger.Errorf("error generating token \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
 	}
 	return c.JSON(http.StatusOK, echo.Map{
 		"token": token,
@@ -84,7 +84,7 @@ func (app *Application) Register(c echo.Context) error {
 			return c.JSON(http.StatusConflict, map[string]string{"error": "email or username already exists"})
 		}
 		app.logger.Errorf("error creating user \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "account created successfully"})
 }
@@ -144,7 +144,7 @@ func (app *Application) GetProfile(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "profile not found"})
 		}
 		app.logger.Errorf("error fetching profile by user id \n%w", err)
-		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
 	}
 
 	if err := DecryptFields(app.env[env.AES_KEY], &profile.AadhaarNumber);err != nil {
@@ -164,7 +164,7 @@ func (app *Application) UpdateProfile(c echo.Context) error {
 	var p models.Profile
 	if err := c.Bind(&p); err != nil {
 		app.logger.Errorf("error binding json to type profile \n%w", err)
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+		return c.JSON(http.StatusBadRequest, map[string]HttpResponseMsg{"error": ErrBadRequest})
 	}
 
 	if validate := ValidateProfile(p); !validate.Valid(){
@@ -183,6 +183,8 @@ func (app *Application) UpdateProfile(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "profile not found"})
 		}
 		if errors.Is(err, models.AlreadyExists) {
+			//the phone number is the only unique field that can cause conflict here
+			//that's why we return this specific message
 			return c.JSON(http.StatusConflict, map[string]string{"error": "phone no. already exists"})
 		}
 		app.logger.Errorf("error updating profile \n%w", err)

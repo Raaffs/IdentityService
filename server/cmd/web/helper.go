@@ -19,7 +19,7 @@ type HttpResponseMsg string
 var ErrInternalServer=HttpResponseMsg("internal server error")
 var ErrBadRequest=HttpResponseMsg("bad request")
 var ErrUnauthorized=HttpResponseMsg("you're not authorized to perform this action")
-
+var ErrNotFound=HttpResponseMsg("not found")
 var(
     ErrInvalidToken=errors.New("invalid token claims")
 )
