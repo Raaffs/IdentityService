@@ -5,12 +5,6 @@ import "slices"
 
 import "regexp"
 
-var (
-	// EmailRX is a regex for sanity checking the format of email addresses.
-	// The regex pattern used is taken from  https://html.spec.whatwg.org/#valid-e-mail-address.
-	EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-)
-
 // Validator struct type contains a map of validation errors.
 type Validator struct {
 	Errors map[string]string
@@ -26,15 +20,12 @@ func (v *Validator) Valid() bool {
 	return len(v.Errors) == 0
 }
 
-// AddError adds an error message to the map (so long as no entry already exists for the
-// given key).
 func (v *Validator) AddError(key, message string) {
 	if _, exists := v.Errors[key]; !exists {
 		v.Errors[key] = message
 	}
 }
 
-// Check adds an error message to the map only if a validation check is not 'ok'.
 func (v *Validator) Check(ok bool, key, message string) {
 	if !ok {
 		v.AddError(key, message)

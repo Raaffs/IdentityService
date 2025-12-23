@@ -19,7 +19,6 @@ type User struct {
     UpdatedAt    time.Time `json:"updated_at"`
 }
 
-// Profiles table equivalent
 type Profile struct {
     ID            int       `json:"id"`
     UserID        int       `json:"user_id"`

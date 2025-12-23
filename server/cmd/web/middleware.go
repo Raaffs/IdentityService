@@ -6,9 +6,7 @@ import (
 )
 func (app *Application) Authenticate() echo.MiddlewareFunc {
     return echojwt.WithConfig(echojwt.Config{
-        // Tell Echo which secret to use to verify tokens
         SigningKey: []byte(app.env["JWT_SECRET"]),
-        // This ensures the token is extracted from "Authorization: Bearer <token>"
         TokenLookup: "header:Authorization:Bearer ",
     })
 }

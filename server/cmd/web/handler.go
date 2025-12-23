@@ -32,7 +32,7 @@ func (app *Application) Login(c echo.Context) error {
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return c.JSON(http.StatusUnauthorized, map[string]HttpResponseMsg{"error": ErrUnauthorized})
+			return c.JSON(http.StatusUnauthorized, map[string]HttpResponseMsg{"error": "invalid username or password"})
 		}
 		app.logger.Error("error comparing password hash \n%w", err)
 		return c.JSON(http.StatusInternalServerError, map[string]HttpResponseMsg{"error": ErrInternalServer})
