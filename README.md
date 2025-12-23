@@ -9,9 +9,6 @@
   <p align="center">
 </div>
 
-## GitHub Link:
-https://github.com/Raaffs/IdentityService
----
 
 <!-- TABLE OF CONTENTS -->
 
@@ -21,6 +18,9 @@ https://github.com/Raaffs/IdentityService
 This is a full-stack identity management system built to handle user registration, login, and secure profile storage. The project is split into three main parts: a Go backend API, a React (Vite) frontend dashboard, and a PostgreSQL database.
 The core focus of this system is the Protection of Personally Identifiable Information (PII). Specifically, it implements AES-256 encryption to ensure that sensitive data like Aadhaar/National ID numbers remain encrypted even if the database is compromised.
 
+## GitHub Link:
+https://github.com/Raaffs/IdentityService
+---
 
 ### Built With
 
