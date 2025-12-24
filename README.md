@@ -198,7 +198,7 @@ Ensure you have the following installed before proceeding:
 - Performed very well with React-based error handling flows.
 - Correctly handled API error states, user-facing messages, and redirects (e.g., 404 pages).
 - Integrated cleanly with Formik and Yup validation patterns.
-- Required minimal cleanup before production use.
+- Required minimal cleanup before use.
 - Significantly improved development speed and UX consistency.
 
 ---
@@ -214,7 +214,7 @@ Ensure you have the following installed before proceeding:
 
 ### 5. SQL Query Assistance  
 **AI Agent:** ChatGPT 5 Mini (Copilot)  
-**Score:** ⭐⭐⭐☆☆ (3.5 / 5)
+**Score:** ⭐⭐⭐☆☆ (3 / 5)
 
 - Generated structurally correct SQL queries.
 - Overlooked Go-specific implementation details, particularly pointer semantics required when scanning query results with `pgx` library, which could've led to empty result sets if left uncorrected.
