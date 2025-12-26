@@ -32,17 +32,20 @@ func (h *HealthChecker)GetStatus()HealthStatus{
 	return h.status
 }
 
-func (h *HealthChecker)Handler(c echo.Context)error{
-	switch h.GetStatus(){
-	case StatusHealthy:
-		return c.String(200,string(StatusHealthy))
-	case StatusDegraded:
-		return c.String(200,string(StatusDegraded))
-	case StatusCritical:
-		return c.String(503,string(StatusCritical))
-	case StatusDown:
-		return c.String(503,string(StatusDown))
+func (h *HealthChecker) Handler(c echo.Context) error {
+	status := h.GetStatus()
+	var code int
+
+	switch status {
+	case StatusHealthy, StatusDegraded:
+		code = 200
+	case StatusCritical, StatusDown:
+		code = 503
 	default:
-		return c.String(500,"unknown")
-	}	
+		code = 500
+		status = "unknown"
+	}
+	return c.JSON(code, map[string]string{
+		"status": string(status),
+	})
 }
