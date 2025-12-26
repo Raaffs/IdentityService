@@ -135,11 +135,11 @@ Ensure you have the following installed before proceeding:
 1. Environment Configuration
    - Create your local environment file and update the database connection string.
 
-    ```bash
-       cd backend/
-      cp ../.env.example .env
-      # Open .env and edit your DB_URL
-    ```
+   ```bash
+   cd backend/
+   cp ../.env.example .env
+   # Open .env and edit your DB_URL
+   ```
 3. Database Migrations
    ```bash
      go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
